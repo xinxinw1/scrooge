@@ -1,5 +1,4 @@
 import sbt._
-// import Process._
 import Keys._
 import com.twitter.sbt._
 
@@ -16,37 +15,33 @@ object Scrooge extends Build {
   ).settings(
     name := "scrooge",
     organization := "com.twitter",
-    version := "3.0",
+    version := "2.5.5-SNAPSHOT",
 
     libraryDependencies ++= Seq(
       "org.apache.thrift" % "libthrift" % "0.8.0",
       "com.github.scopt" %% "scopt" % "2.0.1",
-      "com.twitter" % "util-core_2.9.1" % utilVersion,
+      "com.twitter" %% "util-core" % utilVersion,
 
       // for tests:
-      "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test" withSources(),
-      "org.scalatest" % "scalatest_2.9.1" % "1.7.1" % "test",
+      "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources(),
+      "org.scalatest" %% "scalatest" % "1.7.1" % "test",
       "org.jmock" % "jmock" % "2.4.0" % "test",
       "org.hamcrest" % "hamcrest-all" % "1.1" % "test",
       "cglib" % "cglib" % "2.1_3" % "test",
       "asm" % "asm" % "1.5.3" % "test",
       "org.objenesis" % "objenesis" % "1.1" % "test",
       "com.twitter" % "scrooge-runtime" % "1.1.2" % "test",
-      "com.twitter" % "finagle-core_2.9.1" % finagleVersion % "test",
-      "com.twitter" % "finagle-ostrich4_2.9.1" % finagleVersion % "test"
+      "com.twitter" %% "finagle-core" % finagleVersion % "test",
+      "com.twitter" %% "finagle-ostrich4" % finagleVersion % "test"
     ),
 
-    SubversionPublisher.subversionRepository := Some("https://svn.twitter.biz/maven-public")
+    SubversionPublisher.subversionRepository := Some("https://svn.twitter.biz/maven-public"),
+    
+    mainClass := Some("com.twitter.scrooge.Main")
   )
 
 
-//  override def mainClass = Some("com.twitter.scrooge.Main")
-
-//  override def subversionRepository = Some("https://svn.twitter.biz/maven-public")
-
-//  override def releaseBuild = !(projectVersion.toString contains "SNAPSHOT")
-
-  // publish the combined distribution zip, too.
+// publish the combined distribution zip, too.
 //  def publishZipAction = packageDistTask && task {
 //    FileUtilities.copyFile(("dist" / distZipName), outputRootPath / distZipName, log)
 //  }

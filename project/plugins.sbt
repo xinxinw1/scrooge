@@ -19,10 +19,4 @@ resolvers <<= (resolvers) { r =>
 
 externalResolvers <<= (resolvers) map identity
 
-libraryDependencies <+= (sbtVersion) { sv =>
-  "org.scala-tools.sbt" %% "scripted-plugin" % sv
-}
-
-addSbtPlugin("com.twitter" % "standard-project2" % "0.0.5")
-
 addSbtPlugin("com.twitter" % "sbt-package-dist" % "1.0.0")
