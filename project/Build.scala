@@ -7,11 +7,18 @@ object Scrooge extends Build {
   val finagleVersion = "1.11.0"
   val utilVersion = "2.0.0"
 
+  val generateTestThrift = TaskKey[Seq[File]](
+    "generate-test-thrift",
+    "generate scala/java code used for unit tests"
+  )
+
   lazy val root = Project(
     id = "scrooge",
     base = file("."),
     settings = Project.defaultSettings ++
-      StandardProject.newSettings
+      StandardProject.newSettings ++
+      // package the distribution zipfile too:
+      addArtifact(Artifact("scrooge", "zip", "zip"), PackageDist.packageDist).settings
   ).settings(
     name := "scrooge",
     organization := "com.twitter",
@@ -36,51 +43,44 @@ object Scrooge extends Build {
     ),
 
     SubversionPublisher.subversionRepository := Some("https://svn.twitter.biz/maven-public"),
-    
-    mainClass := Some("com.twitter.scrooge.Main")
+
+    mainClass := Some("com.twitter.scrooge.Main"),
+
+    (sourceGenerators in Test) <+= generateTestThrift,
+
+    generateTestThrift <<= (
+      streams,
+      exportedProducts in Compile,
+      fullClasspath in Runtime,
+      sourceManaged in Test
+    ) map { (out, products, cp, managed) =>
+      generateThriftFor("scala", cp, managed, out.log) //++
+        //generateThriftFor("java", cp, managed, out.log)
+    }
   )
 
+  def generateThriftFor(
+    language: String,
+    classpath: Classpath,
+    managedFolder: File,
+    log: Logger
+  ): Seq[File] = {
+    val outFolder = managedFolder / language
+    outFolder.mkdirs()
 
-// publish the combined distribution zip, too.
-//  def publishZipAction = packageDistTask && task {
-//    FileUtilities.copyFile(("dist" / distZipName), outputRootPath / distZipName, log)
-//  }
-//  lazy val publishZip = publishZipAction
-
-//  override def artifacts = super.artifacts ++ Set(Artifact("scrooge", "zip", "zip"))
-
-//  override lazy val publishLocal = publishZipAction && publishLocalAction
-//  override lazy val publish = publishZipAction && publishAction
-
-//  lazy val generateTestScalaThrift =
-//    runTask(
-//      Some("com.twitter.scrooge.Main"),
-//      runClasspath,
-//      Array(
-//        "--finagle",
-//        "--ostrich",
-//        "-d", "target/gen-scala",
-//        "-l", "scala",
-//        "src/test/resources/test.thrift"
-//      )
-//    ) dependsOn(compile, copyResources)
-
-//  lazy val generateTestJavaThrift =
-//    runTask(
-//      // Some("com.twitter.scrooge.Main"),
-//      runClasspath,
-//      Array(
-//        "--finagle",
-//        "--ostrich",
-//        "-d", "target/gen-java",
-//        "-l", "java",
-//        "src/test/resources/test.thrift"
-//      )
-//    ) dependsOn(compile, copyResources)
-//
-//  lazy val generateTestThrift = generateTestScalaThrift && generateTestJavaThrift
-//  def generateTestThriftAction = generateTestThrift
-
-//  override def testSourceRoots = super.testSourceRoots +++ ("target" / "gen-scala" ##) // +++ ("target" / "gen-java" ##)
-//  override def testCompileAction = super.testCompileAction dependsOn generateTestThrift
+    log.info("Generating " + language + " files for tests ...")
+    val command = List(
+      "java",
+      "-cp", classpath.files.mkString(":"),
+      "com.twitter.scrooge.Main",
+      "--finagle",
+      "--ostrich",
+      "-d", outFolder.getAbsolutePath.toString,
+      "-l", language,
+      "src/test/resources/test.thrift"
+    )
+    log.debug(command.mkString(" "))
+    command ! log
+    (outFolder ** ("*." + language)).get.toSeq
+  }
 }
