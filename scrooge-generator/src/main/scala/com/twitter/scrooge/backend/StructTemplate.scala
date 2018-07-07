@@ -331,6 +331,8 @@ trait StructTemplate { self: TemplateGenerator =>
 
     val structName = if (toplevel) genID(struct.sid.toTitleCase) else genID(struct.sid)
 
+    val decodeByName = struct.annotations.getOrElse("decodeByName", "false") == "true"
+
     Dictionary(
       "public" -> v(toplevel),
       "package" -> namespace.map(genID).getOrElse(v("")),
@@ -349,6 +351,7 @@ trait StructTemplate { self: TemplateGenerator =>
       "arity" -> v(arity.toString),
       "isException" -> v(isException),
       "isResponse" -> v(isResponse),
+      "decodeByName" -> v(decodeByName),
       "hasExceptionMessage" -> v(exceptionMsgField.isDefined),
       "exceptionMessageField" -> exceptionMsgField.map(genID).getOrElse { v("")},
       "product" -> v(productN(struct.fields, namespace)),

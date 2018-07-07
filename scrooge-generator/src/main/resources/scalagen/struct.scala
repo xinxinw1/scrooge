@@ -211,9 +211,19 @@ object {{StructName}} extends ThriftStructCodec3[{{StructName}}] {
       if (_field.`type` == TType.STOP) {
         _done = true
       } else {
+{{#decodeByName}}
+        _field.name match {
+{{/decodeByName}}
+{{^decodeByName}}
         _field.id match {
+{{/decodeByName}}
 {{#fields}}
+{{#decodeByName}}
+          case "{{fieldNameForWire}}" =>
+{{/decodeByName}}
+{{^decodeByName}}
           case {{id}} =>
+{{/decodeByName}}
             {{>readField}}
 {{/fields}}
           case _ =>
