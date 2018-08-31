@@ -956,6 +956,53 @@ class ScalaGeneratorSpec extends JMockSpec with EvalHelper {
       }
     }
 
+    "decode by name" should {
+      "simple field" should {
+        "read" in { cycle => import cycle._
+          val protocol = mock[TProtocol]
+          expecting { e => import e._
+              startRead(e, protocol, new TField("raptor", TType.STRUCT, 1))
+              startRead(e, protocol, new TField("isOwl", TType.BOOL, 1))
+              one(protocol).readBool(); will(returnValue(false))
+              nextRead(e, protocol, new TField("species", TType.STRING, 2))
+              one(protocol).readString(); will(returnValue("peregrine"))
+              endRead(e, protocol)
+              endRead(e, protocol)
+            startRead(e, protocol, new TField("hummingbird", TType.STRING, 2))
+            one(protocol).readString(); will(returnValue("Anna's Hummingbird"))
+            nextRead(e, protocol, new TField("owlet_nightjar", TType.STRING, 3))
+            one(protocol).readBinary(); will(returnValue(ByteBuffer.allocate(1)))
+            endRead(e, protocol)
+          }
+
+          whenExecuting {
+            intercept[TProtocolException] {
+              Bird.decode(protocol)
+            }
+          }
+        }
+      }
+
+      "nested struct" should {
+        "read" in { cycle => import cycle._
+          val protocol = mock[TProtocol]
+          expecting { e => import e._
+            startRead(e, protocol, new TField("raptor", TType.STRUCT, 1))
+            startRead(e, protocol, new TField("isOwl", TType.BOOL, 1))
+            one(protocol).readBool(); will(returnValue(false))
+            nextRead(e, protocol, new TField("species", TType.STRING, 2))
+            one(protocol).readString(); will(returnValue("peregrine"))
+            endRead(e, protocol)
+            endRead(e, protocol)
+          }
+
+          whenExecuting {
+            Bird.decode(protocol) must be(Bird.Raptor(Raptor(false, "peregrine")))
+          }
+        }
+      }
+    }
+
     "typedef relative fields" in { _ =>
       val candy = Candy(100, CandyType.DeliCIous)
       candy.sweetnessIso must be(100)
